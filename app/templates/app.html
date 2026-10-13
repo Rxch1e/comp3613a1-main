@@ -1,9 +1,246 @@
 {% extends "authenticated-base.html" %}
-{% block title %}Home{% endblock %}
+{% block title %}Student Home{% endblock %}
+
+{% block additional_styles %}
+<style>
+  .home-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, 0.8fr);
+    gap: 1.25rem;
+  }
+
+  .home-heading h1 {
+    font-size: clamp(1.8rem, 3vw, 2.3rem);
+    font-weight: 800;
+  }
+
+  .home-heading {
+    margin-bottom: 1.25rem;
+  }
+
+  .home-intro-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    gap: 1.25rem;
+    align-items: end;
+    margin-bottom: 1.25rem;
+  }
+
+  .home-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .home-stat {
+    padding: 1rem;
+    border: 1px solid #aeb8c3;
+    background: var(--brand-surface);
+  }
+
+  .home-stat strong {
+    display: block;
+    font-size: 1.55rem;
+  }
+
+  .home-section {
+    margin-bottom: 1.25rem;
+  }
+
+  .home-milestone {
+    padding: 1.25rem;
+    border: 1px solid #aeb8c3;
+    background: var(--brand-surface);
+  }
+
+  .home-badge-panel {
+    padding: 1.25rem;
+    border: 1px solid #aeb8c3;
+    background: var(--brand-surface);
+  }
+
+  .home-badge-icon {
+    display: grid;
+    place-items: center;
+    min-height: 90px;
+    margin-top: 1rem;
+    background: #e8ebee;
+  }
+
+  .home-badge-icon .material-symbols-outlined {
+    font-size: 3rem;
+  }
+
+  .home-badge-icon .badge-emblem {
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .home-badge-icon .badge-emblem .material-symbols-outlined {
+    font-size: 3rem;
+  }
+
+  .home-leaderboard-row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #d8e0e9;
+  }
+
+  .home-leaderboard-row:last-child {
+    border-bottom: 0;
+  }
+
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .event-card {
+    padding: 1rem;
+    border: 1px solid #aeb8c3;
+    background: var(--brand-surface);
+  }
+
+  .event-date {
+    color: var(--brand-accent);
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 1100px) {
+    .home-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .home-intro-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 850px) {
+    .home-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 500px) {
+    .home-stats {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
 
 {% block subpage_content %}
-<div class="container-fluid py-2">
-  <h1 class="h4 mb-2">Home</h1>
-  <p class="text-muted mb-0">Workflow screens replace this shell in Phase 5 implement.</p>
+<div class="home-intro-row">
+<div class="home-heading">
+  <h1 class="mb-1">Welcome back, {{ user.first_name or user.username }}</h1>
+  <p class="text-muted mb-0">Your volunteer activity, rewards, and progress at a glance.</p>
 </div>
+
+<section class="wire-card">
+  <div class="wire-card-header"><h2 class="h5 mb-0">Upcoming volunteer events</h2></div>
+  <div class="p-3 events-grid">
+    {% for event in upcoming_events %}
+    <article class="event-card"><div class="event-date">{{ event.date }}</div><h3 class="h6 mt-2 mb-2">{{ event.name }}</h3><div class="small text-muted">{{ event.location }} · {{ event.hours }} hours available</div></article>
+    {% endfor %}
+  </div>
+</section>
+</div>
+
+<div class="home-stats">
+  <div class="home-stat"><span class="text-muted small">Lifetime hours</span><strong>{{ approved_hours|hours }} hours</strong><span class="small text-muted">Total approved volunteer hours</span></div>
+  <div class="home-stat"><span class="text-muted small">Spendable balance</span><strong>{{ spendable_balance|hours }} hours</strong><span class="small text-muted">After redemptions</span></div>
+  <div class="home-stat"><span class="text-muted small">Rank</span><strong>#{{ leaderboard.current_rank or '—' }}</strong><span class="small text-muted">Among {{ leaderboard.total_participants }} student volunteers</span></div>
+  <div class="home-stat"><span class="text-muted small">Badges</span><strong>{{ progress.milestones|selectattr('achieved')|list|length }}/{{ progress.milestones|length }}</strong><span class="small text-muted">{{ badge.name }} milestone unlocked</span></div>
+</div>
+
+<div class="home-layout">
+  <div>
+    <section class="home-section home-milestone">
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+        <h2 class="h5 mb-0">Next milestone: {{ next_milestone.title }}</h2>
+        <strong>{{ progress.approved_hours|hours }} / {{ next_milestone.required_hours }} lifetime hours</strong>
+      </div>
+      <div class="progress" role="progressbar" aria-label="{{ next_milestone.title }} progress" aria-valuenow="{{ next_milestone.percent }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ next_milestone.percent }}%; background-color: var(--brand-accent);"></div></div>
+      <p class="text-muted mb-0 mt-3">{{ next_milestone.remaining_hours|hours }} more approved hours to unlock {{ next_milestone.title }}. Redeeming prizes does not affect milestones.</p>
+    </section>
+
+    <section class="home-section wire-card">
+      <div class="wire-card-header"><h2 class="h5 mb-0">Recent submissions</h2></div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Event name</th><th>Date submitted</th><th>Hours</th><th>Status</th><th>Details</th></tr></thead>
+          <tbody>
+          {% for log in logs[:5] %}
+          <tr><td>{{ log.event_name }}</td><td>{{ log.submitted_at.strftime('%b %d, %Y') }}</td><td>{{ log.hours|hours }}</td><td><span class="status-pill status-{{ log.status }}">{{ log.status|title }}</span></td><td><button class="btn btn-link btn-sm p-0 submission-details-button" type="button" data-bs-toggle="modal" data-bs-target="#submissionDetailsModal" data-event="{{ log.event_name }}" data-hours="{{ log.hours|hours }}" data-date="{{ log.event_date.strftime('%b %d, %Y') }}" data-submitted="{{ log.submitted_at.strftime('%b %d, %Y') }}" data-status="{{ log.status|title }}" data-info="{{ log.additional_info or '' }}" data-proof="{{ url_for('static', path=log.proof) }}" data-rejection="{{ log.rejection_reason or '' }}">View details</button></td></tr>
+          {% else %}<tr><td colspan="5" class="text-muted">No submissions yet.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="small text-muted p-3 border-top">Pending and rejected hours are not included in your balance.</div>
+    </section>
+  </div>
+
+  <div>
+    <section class="home-section home-badge-panel">
+      <h2 class="h5 mb-1">Latest badge</h2>
+      <div class="text-uppercase text-muted small">{{ badge.name }} badge · {% if badge.name == 'No badge yet' %}locked{% else %}unlocked{% endif %}</div>
+      <div class="home-badge-icon"><span class="badge-emblem {{ badge.color }}"><span class="material-symbols-outlined" aria-hidden="true">{{ badge.icon }}</span></span></div>
+      {% if badge.reached_date %}<p class="text-muted small mt-3 mb-1">Reached {{ badge.reached_date.strftime('%b %d, %Y') }}.</p>{% endif %}
+      <p class="small mb-0">Next: {{ next_milestone.title }} at {{ next_milestone.required_hours }} lifetime hours</p>
+    </section>
+
+    <section class="wire-card">
+      <div class="wire-card-header"><h2 class="h5 mb-0">Top 3 volunteers</h2></div>
+      <div class="p-3">
+        {% for entry in leaderboard.entries[:3] %}
+        <div class="home-leaderboard-row"><strong>#{{ entry.rank }}</strong><span class="fw-semibold">{{ entry.username }}</span><span>{{ entry.hours|hours }} hours</span></div>
+        {% else %}<p class="small text-muted mb-0">No leaderboard data yet.</p>{% endfor %}
+        <p class="small text-muted mt-3 mb-2">You are #{{ leaderboard.current_rank or '—' }} with {{ leaderboard.lifetime_hours|hours }} lifetime hours.</p>
+        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('progress_view') }}">View leaderboard</a>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="modal fade" id="submissionDetailsModal" tabindex="-1" aria-labelledby="submissionDetailsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h2 class="modal-title h5" id="submissionDetailsLabel">Submission details</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <div class="modal-body">
+        <h3 class="h5" id="detailsEvent"></h3>
+        <dl class="row small mb-3"><dt class="col-5">Event date</dt><dd class="col-7" id="detailsDate"></dd><dt class="col-5">Submitted</dt><dd class="col-7" id="detailsSubmitted"></dd><dt class="col-5">Hours</dt><dd class="col-7" id="detailsHours"></dd><dt class="col-5">Status</dt><dd class="col-7" id="detailsStatus"></dd></dl>
+        <div class="mb-3"><strong>Additional information</strong><p class="small text-muted mb-0" id="detailsInfo"></p></div>
+        <div class="mb-3"><strong>Proof</strong><img class="img-fluid d-block mt-2" id="detailsProof" alt="Submitted proof"></div>
+        <div class="alert alert-danger d-none mb-0" id="detailsRejection"><strong>Rejection reason</strong><div id="detailsRejectionText"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block subpage_scripts %}
+<script>
+  document.querySelectorAll(".submission-details-button").forEach(function (button) {
+    button.addEventListener("click", function () {
+      document.getElementById("detailsEvent").textContent = button.dataset.event;
+      document.getElementById("detailsDate").textContent = button.dataset.date;
+      document.getElementById("detailsSubmitted").textContent = button.dataset.submitted;
+      document.getElementById("detailsHours").textContent = `${button.dataset.hours} hours`;
+      document.getElementById("detailsStatus").textContent = button.dataset.status;
+      document.getElementById("detailsInfo").textContent = button.dataset.info || "None provided.";
+      document.getElementById("detailsProof").src = button.dataset.proof;
+      const rejection = document.getElementById("detailsRejection");
+      rejection.classList.toggle("d-none", !button.dataset.rejection);
+      document.getElementById("detailsRejectionText").textContent = button.dataset.rejection;
+    });
+  });
+</script>
 {% endblock %}

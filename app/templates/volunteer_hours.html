@@ -1,0 +1,207 @@
+{% extends "authenticated-base.html" %}
+{% block title %}Volunteer Hours{% endblock %}
+
+{% block additional_styles %}
+<style>
+  .workflow-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .workflow-heading h1 {
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    font-weight: 800;
+  }
+
+  .volunteer-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .wire-card {
+    background: var(--brand-surface);
+    border: 1px solid #b8c3cf;
+    box-shadow: none;
+  }
+
+  .wire-card-header {
+    padding: 1.15rem 1.25rem;
+    border-bottom: 1px solid #d8e0e9;
+  }
+
+  .wire-card-body {
+    padding: 1.25rem;
+  }
+
+  .proof-dropzone {
+    display: block;
+    padding: 1.5rem;
+    border: 1px dashed #8da0b5;
+    background: #f4f6f8;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .proof-dropzone:hover,
+  .proof-dropzone:has(+ input:focus) {
+    border-color: var(--brand-accent);
+    background: color-mix(in srgb, var(--brand-accent) 10%, #f4f6f8);
+  }
+
+  .proof-preview {
+    display: none;
+    width: 100%;
+    max-height: 180px;
+    margin-top: 0.9rem;
+    object-fit: contain;
+    border: 1px solid #b8c3cf;
+    background: #fff;
+  }
+
+  .pending-item {
+    padding: 0.85rem 0;
+    border-bottom: 1px solid #d8e0e9;
+  }
+
+  .pending-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .status-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: 900px) {
+    .volunteer-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block subpage_content %}
+<div class="workflow-heading">
+  <h1 class="mb-1">Submit hours</h1>
+  <p class="text-muted mb-0">Log completed volunteer work. Hours count toward your rewards once approved.</p>
+</div>
+
+<div class="volunteer-layout">
+  <section id="submit-hours" class="wire-card">
+    <div class="wire-card-header">
+      <h2 class="h5 mb-1">New volunteer-hour submission</h2>
+      <p class="text-muted small mb-0">Required fields are marked with <span class="required-mark">*</span></p>
+    </div>
+    <div class="wire-card-body">
+      <form method="post" action="{{ request.url.path }}" enctype="multipart/form-data">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" for="event_name">Event name <span class="required-mark" aria-hidden="true">*</span></label>
+            <input class="form-control" id="event_name" name="event_name" placeholder="Volunteer activity" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="hours">Hours <span class="required-mark" aria-hidden="true">*</span></label>
+            <input class="form-control" id="hours" name="hours" type="number" min="0.01" step="0.01" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="event_date">Event date <span class="required-mark" aria-hidden="true">*</span></label>
+            <input class="form-control" id="event_date" name="event_date" type="date" max="{{ today }}" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="additional_info">Additional information <span class="text-muted">(optional)</span></label>
+            <textarea class="form-control" id="additional_info" name="additional_info" rows="3" placeholder="Add any extra context, notes, or details about the activity."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="proof">Proof <span class="required-mark" aria-hidden="true">*</span></label>
+            <label class="proof-dropzone" for="proof">
+              <strong>Drop a file here or browse files</strong>
+              <span class="d-block text-muted small mt-2">Photo or signed attendance sheet · JPG, PNG · Max 10 MB</span>
+            </label>
+            <input class="visually-hidden" id="proof" name="proof" type="file" accept="image/*" required>
+            <img class="proof-preview" id="proof-preview" alt="Selected proof preview">
+            <div class="text-muted small mt-2" id="proof-status">No image selected yet.</div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button class="btn btn-primary" type="submit">Submit</button>
+          <a class="btn btn-outline-secondary" href="{{ url_for('user_home_view') }}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <aside class="d-grid gap-3">
+    <section class="wire-card">
+      <div class="wire-card-body">
+        <h2 class="h6 mb-2">Tip: make your proof easy to verify</h2>
+        <p class="small text-muted mb-0">Include your name, event date, and volunteered hours in a clear proof image.</p>
+      </div>
+    </section>
+
+    <section class="wire-card">
+      <div class="wire-card-header">
+        <h2 class="h6 mb-1">Your pending submissions ({{ summary.pending|length }})</h2>
+        <p class="small text-muted mb-0">{{ summary.pending_hours|hours }} hours awaiting approval</p>
+      </div>
+      <div class="wire-card-body">
+        {% if summary.pending %}
+        {% for log in summary.pending %}
+        <div class="pending-item">
+          <div class="fw-semibold">{{ log.event_name }}</div>
+          <div class="small text-muted">{{ log.hours|hours }} hours · {{ log.event_date.strftime('%b %d, %Y') }}</div>
+          <div class="status-text mt-1"><span class="status-pill status-pending">Pending</span></div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p class="small text-muted mb-0">No pending submissions.</p>
+        {% endif %}
+        <p class="small text-muted border-top mt-3 pt-3 mb-0">Pending hours are not included in lifetime hours or balance.</p>
+      </div>
+    </section>
+
+    <section class="wire-card">
+      <div class="wire-card-header">
+        <h2 class="h6 mb-0">Rejected submissions</h2>
+      </div>
+      <div class="wire-card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small text-muted">{{ summary.rejected|length }} rejection{{ '' if summary.rejected|length == 1 else 's' }}</span>
+        </div>
+        {% for log in summary.rejected %}
+        <div class="pending-item">
+          <div class="fw-semibold">{{ log.event_name }}</div>
+          <div class="small text-muted">{{ log.hours|hours }} hours · {{ log.event_date.strftime('%b %d, %Y') }}</div>
+          <div class="status-text mt-1"><span class="status-pill status-rejected">Rejected</span></div>
+          {% if log.rejection_reason %}<div class="small text-danger mt-1"><strong>Why it was rejected:</strong> {{ log.rejection_reason }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        {% if not summary.rejected %}<p class="small text-muted mb-0">No rejected submissions.</p>{% endif %}
+      </div>
+    </section>
+  </aside>
+  </div>
+{% endblock %}
+
+{% block subpage_scripts %}
+<script>
+  const proofInput = document.getElementById("proof");
+  const proofPreview = document.getElementById("proof-preview");
+  const proofStatus = document.getElementById("proof-status");
+
+  proofInput.addEventListener("change", function () {
+    const file = proofInput.files[0];
+    if (!file) {
+      proofPreview.style.display = "none";
+      proofPreview.removeAttribute("src");
+      proofStatus.textContent = "No image selected yet.";
+      return;
+    }
+
+    proofPreview.src = URL.createObjectURL(file);
+    proofPreview.style.display = "block";
+    proofStatus.textContent = `Selected: ${file.name}`;
+  });
+</script>
+{% endblock %}

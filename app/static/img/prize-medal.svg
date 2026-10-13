@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title">
+  <title>Apex Awards medal prize</title>
+  <rect width="640" height="360" fill="#e9edf1"/>
+  <path d="M270 50h42v90h-42zM328 50h42v90h-42z" fill="#0b2347"/>
+  <circle cx="320" cy="205" r="82" fill="#e7b83f" stroke="#0b2347" stroke-width="8"/>
+  <circle cx="320" cy="205" r="59" fill="#fff" stroke="#0b2347" stroke-width="3"/>
+  <path d="m320 164 12 25 28 4-20 20 5 28-25-13-25 13 5-28-20-20 28-4z" fill="#e7b83f"/>
+  <text x="320" y="250" fill="#0b2347" font-family="sans-serif" font-size="16" font-weight="700" text-anchor="middle">APEX</text>
+</svg>

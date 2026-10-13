@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block internal_css %}
+<style>
+  .admin-shell {
+    min-height: 100vh;
+    background: #eaf0f6;
+    color: var(--brand-ink);
+  }
+
+  .admin-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem clamp(1rem, 4vw, 3rem);
+    background: var(--brand-sidebar);
+    border-bottom: 4px solid var(--brand-accent);
+  }
+
+  .admin-header .brand-wordmark {
+    color: var(--brand-surface);
+    font-size: 1.35rem;
+  }
+
+  .admin-label {
+    padding: 0.35rem 0.7rem;
+    border: 1px solid var(--brand-accent);
+    color: var(--brand-surface);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .admin-header-user {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #fff;
+  }
+
+  .admin-header-user .btn-outline-secondary {
+    border-color: #fff;
+    color: #fff;
+  }
+
+  .admin-header-user .btn-outline-secondary:hover,
+  .admin-header-user .btn-outline-secondary:focus {
+    border-color: var(--brand-accent);
+    background: var(--brand-accent);
+    color: var(--brand-ink);
+  }
+
+  .admin-content {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+  }
+
+  .admin-refresh {
+    padding: 0.65rem 0.9rem;
+    background: color-mix(in srgb, var(--brand-accent) 24%, #fff);
+    border-left: 3px solid var(--brand-accent);
+    font-weight: 700;
+  }
+
+  .admin-queue,
+  .admin-stat {
+    border-top: 3px solid var(--brand-sidebar);
+  }
+
+  .empty-state {
+    padding: 2rem;
+    border: 1px dashed #c5d0dc;
+    text-align: center;
+  }
+</style>
+{% block admin_styles %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="admin-shell">
+  <header class="admin-header">
+    <a class="brand-wordmark text-decoration-none" href="{{ url_for('admin_home_view') }}">Apex Awards</a>
+    <span class="admin-label">Admin console</span>
+    <div class="admin-header-user">
+      <span class="fw-semibold">{{ user.username }}</span>
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('logout') }}">Sign out</a>
+    </div>
+  </header>
+
+  <main class="admin-content">
+    {% for message in get_flashed_messages(request) %}
+    <div class="alert alert-{{ message.type }}" role="alert">{{ message.message }}</div>
+    {% endfor %}
+    {% block admin_content %}{% endblock %}
+  </main>
+</div>
+{% block admin_scripts %}{% endblock %}
+{% endblock %}

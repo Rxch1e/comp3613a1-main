@@ -1,0 +1,253 @@
+{% extends "authenticated-base.html" %}
+{% block title %}Prizes and My Redemptions{% endblock %}
+
+{% block additional_styles %}
+<style>
+  .prize-heading-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .prize-heading {
+    flex: 1;
+  }
+
+  .prize-heading h1 {
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    font-weight: 800;
+  }
+
+  .prize-metrics {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 0.75rem;
+    width: min(100%, 665px);
+  }
+
+  .prize-metric {
+    padding: 0.75rem 1rem;
+    border: 1px solid #aeb8c3;
+    background: var(--brand-surface);
+  }
+
+  .prize-metric-balance {
+    border: 2px solid var(--brand-ink);
+    background: color-mix(in srgb, var(--brand-accent) 18%, #fff);
+    padding: 1.15rem 1.25rem;
+  }
+
+  .prize-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .prize-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #aeb8c3;
+    background: var(--brand-surface);
+  }
+
+  .prize-image {
+    display: grid;
+    place-items: center;
+    min-height: 150px;
+    margin: 1rem 1rem 0;
+    background: #e5edf5;
+    color: #5c6167;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .prize-image img {
+    width: 100%;
+    height: 150px;
+    padding: 0.6rem;
+    object-fit: contain;
+  }
+
+  .prize-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .redemption-layout {
+    display: block;
+  }
+
+  .redemption-history {
+    width: 100%;
+  }
+
+  .redemption-header,
+  .redemption-row {
+    display: grid;
+    grid-template-columns: 1.3fr 0.8fr 1fr 0.8fr;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .redemption-header {
+    padding: 0.7rem 0.8rem;
+    background: #e8ebee;
+    border: 1px solid #c5cdd6;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .redemption-row {
+    padding: 0.8rem 0;
+    margin-inline: 0.8rem;
+    border-bottom: 1px solid #d8e0e9;
+  }
+
+  .redemption-row:last-child {
+    border-bottom: 0;
+  }
+
+  .confirm-panel {
+    border: 2px solid var(--brand-ink);
+    background: var(--brand-surface);
+  }
+
+  .confirm-modal-header {
+    border-bottom: 3px solid var(--brand-accent);
+  }
+
+  .confirm-prize-preview {
+    width: 96px;
+    height: 72px;
+    object-fit: cover;
+    border: 1px solid #aeb8c3;
+  }
+
+  @media (max-width: 1000px) {
+    .prize-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .prize-heading-row {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .prize-metrics {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 650px) {
+    .prize-metrics {
+      grid-template-columns: 1fr;
+    }
+
+    .redemption-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block subpage_content %}
+<div class="prize-heading-row">
+  <div class="prize-heading">
+    <h1 class="mb-1">Prizes &amp; My Redemptions</h1>
+    <p class="text-muted mb-0">Exchange your spendable hours for prizes.</p>
+  </div>
+  <div class="prize-metrics">
+    <div class="prize-metric prize-metric-balance"><div class="small text-muted">Spendable balance</div><div class="h3 mb-0">{{ spendable_balance|hours }} hours</div></div>
+    <div class="prize-metric"><div class="small text-muted">Prizes redeemed</div><div class="h4 mb-0">{{ redemptions|length }}</div></div>
+    <div class="prize-metric"><div class="small text-muted">Hours redeemed</div><div class="h4 mb-0">{{ redeemed_hours|hours }}</div></div>
+  </div>
+</div>
+
+<div class="prize-grid">
+  {% for prize in prizes %}
+  <article class="prize-card">
+    <div class="prize-image">
+      {% if prize.image_url %}<img src="{{ url_for('static', path=prize.image_url) }}" alt="{{ prize.name }}">{% else %}<span>Prize image</span>{% endif %}
+    </div>
+    <div class="prize-content">
+      <h2 class="h5">{{ prize.name }}</h2>
+      <div class="d-flex justify-content-between gap-2 mb-2"><strong>Cost: {{ prize.hours_cost|hours }} hours</strong><span>Stock: {{ prize.stock }} left</span></div>
+      <div class="small text-muted mb-3">Delivery type: {{ prize.delivery_type|title }}</div>
+      {% if prize.stock <= 0 %}
+      <button class="btn btn-outline-secondary mt-auto" type="button" disabled>Out of stock</button>
+      {% elif spendable_balance < prize.hours_cost %}
+      <button class="btn btn-outline-secondary mt-auto" type="button" disabled>Not enough hours</button>
+      {% else %}
+      <button class="btn btn-primary mt-auto redeem-button" type="button" data-bs-toggle="modal" data-bs-target="#redemptionModal" data-prize-name="{{ prize.name }}" data-prize-cost="{{ prize.hours_cost|hours }}" data-balance-after="{{ [spendable_balance - prize.hours_cost, 0]|max|hours }}" data-prize-image="{{ url_for('static', path=prize.image_url) }}" data-redeem-url="{{ url_for('redeem_prize', prize_id=prize.prize_id) }}">Redeem</button>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+<div class="redemption-layout">
+  <section class="wire-card redemption-history">
+    <div class="wire-card-header"><h2 class="h5 mb-0">My redemption history</h2></div>
+    <div class="p-3">
+      {% if redemptions %}
+      <div class="redemption-header"><span>Prize Name</span><span>Hours Cost</span><span>Date</span><span>Status</span></div>
+      {% for row in redemption_rows %}
+      <div class="redemption-row">
+        <span class="fw-semibold">{{ row.prize_name }}</span>
+        <span>{{ row.hours_cost|hours }} hours</span>
+        <span>{{ row.redemption.redeemed_at.strftime('%b %d, %Y') }}</span>
+        <span><span class="status-pill status-{{ row.redemption.status }}">{{ row.redemption.status|title }}</span>{% if row.delivery_type == 'manual' %}<small class="d-block text-muted">Manual delivery</small>{% endif %}</span>
+      </div>
+      {% endfor %}
+      <p class="small text-muted border-top mt-3 pt-3 mb-0">Pickup: Student Services, Mon-Fri, 9:00-17:00. Bring your student ID.</p>
+      {% else %}<p class="small text-muted mb-0">No redemptions yet.</p>{% endif %}
+      <p class="small text-muted border-top mt-3 pt-3 mb-0">Pending hours have already been deducted from your balance.</p>
+    </div>
+  </section>
+
+</div>
+
+<div class="modal fade" id="redemptionModal" tabindex="-1" aria-labelledby="redemptionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header confirm-modal-header">
+        <h2 class="modal-title h5" id="redemptionModalLabel">Confirm Redemption</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex gap-3 align-items-center mb-3">
+          <img class="confirm-prize-preview" id="confirmPrizeImage" alt="">
+          <div><h3 class="h6 mb-1" id="confirmPrizeName"></h3><p class="small text-muted mb-0" id="confirmPrizeCost"></p></div>
+        </div>
+        <p class="mb-2">Redeeming this prize will deduct the hours from your spendable balance.</p>
+        <p class="fw-bold mb-2">Balance after redemption: <span id="confirmBalanceAfter"></span> hours</p>
+        <p class="small text-muted mb-0">Manual prizes remain pending until an administrator fulfils them.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="redemptionForm" method="post"><button class="btn btn-primary" type="submit">Confirm redemption</button></form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block subpage_scripts %}
+<script>
+  document.querySelectorAll(".redeem-button").forEach(function (button) {
+    button.addEventListener("click", function () {
+      document.getElementById("confirmPrizeName").textContent = button.dataset.prizeName;
+      document.getElementById("confirmPrizeCost").textContent = `${button.dataset.prizeCost} hours`;
+      document.getElementById("confirmBalanceAfter").textContent = button.dataset.balanceAfter;
+      document.getElementById("confirmPrizeImage").src = button.dataset.prizeImage;
+      document.getElementById("confirmPrizeImage").alt = button.dataset.prizeName;
+      document.getElementById("redemptionForm").action = button.dataset.redeemUrl;
+    });
+  });
+</script>
+{% endblock %}

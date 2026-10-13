@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" role="img" aria-labelledby="title">
+  <title>Demo volunteer attendance proof</title>
+  <rect width="900" height="540" fill="#f5f7fa"/>
+  <rect x="48" y="48" width="804" height="444" fill="#fff" stroke="#0b2347" stroke-width="5"/>
+  <text x="450" y="150" fill="#0b2347" font-family="sans-serif" font-size="42" font-weight="700" text-anchor="middle">VOLUNTEER ATTENDANCE</text>
+  <path d="M180 205h540M180 260h540M180 315h360" stroke="#aeb8c3" stroke-width="12"/>
+  <circle cx="450" cy="408" r="38" fill="#e7b83f"/>
+  <path d="m432 408 12 12 27-31" fill="none" stroke="#0b2347" stroke-width="8"/>
+</svg>

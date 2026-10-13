@@ -1,0 +1,57 @@
+{
+  "system": "Student Awards",
+  "actors": [
+    {
+      "name": "Student",
+      "side": "left"
+    },
+    {
+      "name": "Admin",
+      "side": "right"
+    }
+  ],
+  "use_cases": [
+    {
+      "name": "Submit Volunteer Hours",
+      "actors": [
+        "Student"
+      ],
+      "includes": [
+        "Approve Volunteer Hours"
+      ]
+    },
+    {
+      "name": "Approve Volunteer Hours",
+      "actors": [
+        "Admin"
+      ]
+    },
+    {
+      "name": "View Milestones",
+      "actors": [
+        "Student"
+      ]
+    },
+    {
+      "name": "View Leaderboard Progress",
+      "actors": [
+        "Student"
+      ]
+    },
+    {
+      "name": "Redeem Hours for Prizes",
+      "actors": [
+        "Student"
+      ]
+    },
+    {
+      "name": "Fulfil Prize Redemption",
+      "actors": [
+        "Admin"
+      ],
+      "extends": [
+        "Redeem Hours for Prizes"
+      ]
+    }
+  ]
+}

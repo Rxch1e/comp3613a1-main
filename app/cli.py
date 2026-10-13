@@ -47,29 +47,61 @@ def cmd_init(args: argparse.Namespace) -> None:
 
 
 def cmd_seed(args: argparse.Namespace) -> None:
-    """Insert demo users.
+    """Insert demo users and a complete multi-student workflow dataset.
 
     bob / bobpass       (regular_user)
     admin / adminpass   (admin)
     """
     from app.database import ensure_db_and_tables, get_cli_session
     from app.repositories.user import UserRepository
+    from app.repositories.prize import PrizeRepository
+    from app.repositories.volunteer_log import VolunteerLogRepository
+    from app.repositories.redemption import RedemptionRepository
+    from app.models.prize import Prize
+    from app.models.volunteer_log import VolunteerLog
+    from app.models.redemption import Redemption
+    from sqlmodel import select
+    from datetime import date, datetime, timedelta
     from app.schemas.user import AdminCreate, RegularUserCreate
     from app.utilities.security import encrypt_password
 
     _ensure_models_loaded()
     ensure_db_and_tables()
 
-    demo_users = [
-        ("bob", "bob@example.com", "bobpass", "regular_user"),
-        ("admin", "admin@example.com", "adminpass", "admin"),
+    student_users = [
+        ("bob", "bob@example.com", "bobpass", "Bob", "Paul"),
+        ("Aaliyah Brown", "aaliyah.brown@example.com", "studentpass", "Aaliyah", "Brown"),
+        ("Marcus Chen", "marcus.chen@example.com", "studentpass", "Marcus", "Chen"),
+        ("Sofia Davis", "sofia.davis@example.com", "studentpass", "Sofia", "Davis"),
+        ("Liam Edwards", "liam.edwards@example.com", "studentpass", "Liam", "Edwards"),
+        ("Maya Foster", "maya.foster@example.com", "studentpass", "Maya", "Foster"),
+        ("Noah Garcia", "noah.garcia@example.com", "studentpass", "Noah", "Garcia"),
+        ("Chloe Harris", "chloe.harris@example.com", "studentpass", "Chloe", "Harris"),
+        ("Ethan Irving", "ethan.irving@example.com", "studentpass", "Ethan", "Irving"),
+        ("Zoe Johnson", "zoe.johnson@example.com", "studentpass", "Zoe", "Johnson"),
+        ("Caleb King", "caleb.king@example.com", "studentpass", "Caleb", "King"),
+        ("Nora Lewis", "nora.lewis@example.com", "studentpass", "Nora", "Lewis"),
+        ("Mateo Miller", "mateo.miller@example.com", "studentpass", "Mateo", "Miller"),
+        ("Amara Nelson", "amara.nelson@example.com", "studentpass", "Amara", "Nelson"),
+        ("Oliver Owens", "oliver.owens@example.com", "studentpass", "Oliver", "Owens"),
+        ("Priya Patel", "priya.patel@example.com", "studentpass", "Priya", "Patel"),
+        ("Quinn Reed", "quinn.reed@example.com", "studentpass", "Quinn", "Reed"),
+        ("Ruby Scott", "ruby.scott@example.com", "studentpass", "Ruby", "Scott"),
+        ("Theo Taylor", "theo.taylor@example.com", "studentpass", "Theo", "Taylor"),
+        ("Layla Turner", "layla.turner@example.com", "studentpass", "Layla", "Turner"),
+        ("Elias Walker", "elias.walker@example.com", "studentpass", "Elias", "Walker"),
+        ("Mia Wilson", "mia.wilson@example.com", "studentpass", "Mia", "Wilson"),
+        ("Jasper Young", "jasper.young@example.com", "studentpass", "Jasper", "Young"),
+        ("Hana Adams", "hana.adams@example.com", "studentpass", "Hana", "Adams"),
+        ("Daniel Baker", "daniel.baker@example.com", "studentpass", "Daniel", "Baker"),
     ]
+    demo_users = [*[(username, email, password, "regular_user", first_name, last_name) for username, email, password, first_name, last_name in student_users], ("admin", "admin@example.com", "adminpass", "admin", "Admin", "User")]
 
     created = 0
     skipped = 0
     with get_cli_session() as session:
         repo = UserRepository(session)
-        for username, email, password, role in demo_users:
+        for username, email, password, role, first_name, last_name in demo_users:
             if repo.get_by_username(username):
                 print(f"  skip  {username} (already exists)")
                 skipped += 1
@@ -81,10 +113,108 @@ def cmd_seed(args: argparse.Namespace) -> None:
                     email=email,
                     password=encrypt_password(password),
                     role=role,
+                    first_name=first_name,
+                    last_name=last_name,
                 )
             )
             print(f"  create {username} ({role})")
             created += 1
+
+        prize_repo = PrizeRepository(session)
+        seed_prizes = [
+            Prize(name="Campus T-shirt", image_url="img/prize-shirt.svg", hours_cost=10, stock=8, delivery_type="manual"),
+            Prize(name="Recognition Certificate", image_url="img/prize-certificate.svg", hours_cost=50, stock=12, delivery_type="instant"),
+            Prize(name="Apex Medal", image_url="img/prize-medal.svg", hours_cost=32, stock=0, delivery_type="manual"),
+        ]
+        for prize in seed_prizes:
+            if not session.exec(select(Prize).where(Prize.name == prize.name)).first():
+                prize_repo.save(prize)
+                print(f"  create prize {prize.name}")
+
+        users = {
+            username: repo.get_by_username(username)
+            for username, _, _, role, _, _ in demo_users
+            if role != "admin"
+        }
+        volunteer_repo = VolunteerLogRepository(session)
+        approved_hours_by_student = [
+            42, 5, 10, 15, 20, 24, 25, 30, 35, 40, 45, 49, 50,
+            60, 65, 70, 75, 80, 85, 90, 99, 100, 155, 175, 200,
+        ]
+        for student_index, approved_hours in enumerate(approved_hours_by_student):
+            username = student_users[student_index][0]
+            user = users[username]
+            if volunteer_repo.get_by_user_id(user.id):
+                continue
+            volunteer_repo.create(
+                VolunteerLog(
+                    user_id=user.id,
+                    event_name="Community Volunteer Day",
+                    hours=approved_hours,
+                    event_date=date.today() - timedelta(days=student_index + 2),
+                    submitted_at=datetime.utcnow() - timedelta(days=student_index + 1),
+                    proof="img/demo-proof.svg",
+                    additional_info="Seeded approved demo activity",
+                    status="approved",
+                )
+            )
+
+        extra_submissions = [
+            ("Aaliyah Brown", 4, "pending", "Library sorting shift"),
+            ("Ethan Irving", 3, "pending", "Campus clean-up support"),
+            ("Priya Patel", 5, "pending", "Food bank collection"),
+            ("bob", 3, "pending", "Alumni welcome desk"),
+            ("bob", 2, "rejected", "Community outreach event"),
+            ("Layla Turner", 3, "rejected", "Sports day support"),
+        ]
+        for index, (username, hours, status, event_name) in enumerate(extra_submissions):
+            user = users[username]
+            if any(log.event_name == event_name for log in volunteer_repo.get_by_user_id(user.id)):
+                continue
+            volunteer_repo.create(
+                VolunteerLog(
+                    user_id=user.id,
+                    event_name=event_name,
+                    hours=hours,
+                    event_date=date.today() - timedelta(days=index + 1),
+                    submitted_at=datetime.utcnow() - timedelta(hours=index + 3),
+                    proof="img/demo-proof.svg",
+                    additional_info="Seeded demo submission",
+                    status=status,
+                    rejection_reason="Rejected because the proof image does not clearly show the event date and volunteered hours. Upload a clearer image." if status == "rejected" else None,
+                )
+            )
+
+        prizes = prize_repo.get_all()
+        if prizes:
+            prizes_by_name = {prize.name: prize for prize in prizes}
+            redemption_pairs = [
+                ("bob", prizes_by_name["Campus T-shirt"]),
+            ]
+            redemption_pairs.extend(
+                (student_users[index][0], prizes[(index + 1) % len(prizes)])
+                for index in range(1, 15)
+            )
+            redemption_repo = RedemptionRepository(session)
+            redemption_counts = {
+                username: len(redemption_repo.get_by_user_id(user.id))
+                for username, user in users.items()
+            }
+            for index, (username, prize) in enumerate(redemption_pairs):
+                user = users[username]
+                target_count = 2 if username == "bob" else 1
+                if redemption_counts[username] >= target_count:
+                    continue
+                redemption_repo.create(
+                    Redemption(
+                        user_id=user.id,
+                        prize_id=prize.prize_id,
+                        redeemed_at=datetime.utcnow() - timedelta(days=index + 1),
+                        fulfilled_at=(datetime.utcnow() - timedelta(days=index)) if prize.delivery_type == "instant" else None,
+                        status="fulfilled" if prize.delivery_type == "instant" else "pending",
+                    )
+                )
+                redemption_counts[username] += 1
 
     print(f"Seed done — created {created}, skipped {skipped}.")
     print("Login with bob/bobpass or admin/adminpass")

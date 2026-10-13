@@ -1,0 +1,207 @@
+{% extends "authenticated-base.html" %}
+{% block title %}Leaderboard and Milestones{% endblock %}
+
+{% block additional_styles %}
+<style>
+  .progress-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .progress-heading h1 {
+    font-size: clamp(1.7rem, 3vw, 2.2rem);
+    font-weight: 800;
+  }
+
+  .progress-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.85fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .milestone-card {
+    padding: 1.15rem;
+    border: 1px solid #b8c3cf;
+    background: var(--brand-surface);
+  }
+
+  .milestone-card + .milestone-card {
+    margin-top: 0.75rem;
+  }
+
+  .milestone-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 72px;
+    height: 56px;
+    border: 1px solid #9aa8b7;
+    background: #f0f2f4;
+    color: var(--brand-ink);
+  }
+
+  .milestone-badge .material-symbols-outlined {
+    font-size: 1.8rem;
+  }
+
+  .milestone-badge.bronze { color: #a7612c; border-radius: 38% 62% 55% 45%; }
+  .milestone-badge.silver { color: #6e7b87; clip-path: polygon(50% 0, 92% 25%, 82% 78%, 50% 100%, 18% 78%, 8% 25%); }
+  .milestone-badge.gold { color: #b18100; border-radius: 50%; }
+
+  .leaderboard-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .metric-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .metric-chip {
+    padding: 0.45rem 0.65rem;
+    border: 1px solid #aeb8c3;
+    background: #f0f2f4;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .leaderboard-row {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #d8e0e9;
+  }
+
+  .leaderboard-row:last-child {
+    border-bottom: 0;
+  }
+
+  .leaderboard-rank {
+    color: var(--brand-muted);
+    font-weight: 800;
+  }
+
+  .leaderboard-current {
+    background: color-mix(in srgb, var(--brand-accent) 15%, #fff);
+    margin-inline: -0.75rem;
+    padding-inline: 0.75rem;
+  }
+
+  .leaderboard-table {
+    width: 100%;
+  }
+
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #d8e0e9;
+    text-align: left;
+  }
+
+  .leaderboard-table th {
+    background: #e8ebee;
+    font-size: 0.78rem;
+  }
+
+  @media (max-width: 900px) {
+    .progress-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block subpage_content %}
+<div class="progress-heading">
+  <h1 class="mb-1">Leaderboard &amp; milestones</h1>
+  <p class="text-muted mb-0">Lifetime approved hours determine your rank and badges. Prize redemptions never lower your rank.</p>
+</div>
+
+<div class="progress-layout">
+  <section class="wire-card">
+    <div class="wire-card-header">
+      <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+        <div>
+          <h2 class="h5 mb-1">Top 10 students</h2>
+          <p class="small text-muted mb-0">Ranked by lifetime approved hours</p>
+        </div>
+        {% if leaderboard.show_all %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('progress_view') }}">Show top 10</a>{% else %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('progress_view') }}?show_all=1">Show all participants</a>{% endif %}
+      </div>
+      <form class="leaderboard-filters" method="get" action="{{ url_for('progress_view') }}">
+        <label class="visually-hidden" for="badge-filter">Filter by badge</label>
+        <select class="form-select form-select-sm" id="badge-filter" name="badge" style="max-width: 190px">
+          <option value="">All badges</option>
+          <option value="gold" {{ 'selected' if leaderboard.badge_filter == 'gold' }}>Gold</option>
+          <option value="silver" {{ 'selected' if leaderboard.badge_filter == 'silver' }}>Silver</option>
+          <option value="bronze" {{ 'selected' if leaderboard.badge_filter == 'bronze' }}>Bronze</option>
+          <option value="not yet unlocked" {{ 'selected' if leaderboard.badge_filter == 'not yet unlocked' }}>No badge</option>
+        </select>
+        <label class="visually-hidden" for="letter-filter">Filter by first letter</label>
+        <select class="form-select form-select-sm" id="letter-filter" name="letter" style="max-width: 150px">
+          <option value="">All names</option>
+          {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}<option value="{{ letter|lower }}" {{ 'selected' if leaderboard.letter_filter == letter|lower }}>{{ letter }}</option>{% endfor %}
+        </select>
+        <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+        {% if leaderboard.badge_filter or leaderboard.letter_filter %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('progress_view') }}{{ '?show_all=1' if leaderboard.show_all else '' }}">Clear</a>{% endif %}
+      </form>
+      <div class="metric-strip">
+        <span class="metric-chip">Your rank: {{ leaderboard.current_rank or '—' }}</span>
+        <span class="metric-chip">Lifetime hours: {{ leaderboard.lifetime_hours|hours }} hrs</span>
+        <span class="metric-chip">Total participants: {{ leaderboard.total_participants }}</span>
+      </div>
+    </div>
+    <div class="table-responsive p-3">
+      <table class="leaderboard-table">
+        <thead><tr><th>Rank</th><th>Student</th><th>Lifetime hours</th><th>Highest badge</th></tr></thead>
+        <tbody>
+        {% for entry in leaderboard.entries %}
+        <tr class="{{ 'leaderboard-current' if entry.is_current_user }}">
+          <td>#{{ entry.rank }}</td>
+          <td class="fw-semibold">{{ entry.username }}{% if entry.is_current_user %} (you){% endif %}</td>
+          <td>{{ entry.hours|hours }}</td>
+          <td><span class="milestone-badge {{ entry.highest_badge|lower|replace(' ', '-') }}"><span class="material-symbols-outlined" aria-hidden="true">{{ entry.badge_icon }}</span><span class="visually-hidden">{{ entry.highest_badge }}</span></span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted">No students have approved hours yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="border-top p-3 text-center small fw-semibold">Showing {{ leaderboard.entries|length }} of {{ leaderboard.total_participants }} participants</div>
+  </section>
+
+  <section class="wire-card">
+    <div class="wire-card-header">
+      <h2 class="h5 mb-1">Your milestones</h2>
+      <p class="small text-muted mb-0">Badges are permanent.</p>
+    </div>
+    <div class="p-3">
+      {% for milestone in progress.milestones %}
+      <div class="milestone-card">
+        <div class="d-flex gap-3 align-items-start">
+          <div class="milestone-badge {{ milestone.badge|lower }}"><span class="material-symbols-outlined" aria-hidden="true">{{ milestone.badge_icon }}</span><span class="visually-hidden">{{ milestone.badge }} badge</span></div>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between gap-2">
+              <h3 class="h6 mb-1">{{ milestone.title }} · {{ milestone.required_hours }} hours</h3>
+              <span class="small fw-bold">{{ milestone.state }}</span>
+            </div>
+            {% if milestone.reached_date %}<div class="small text-muted mb-2">Earned {{ milestone.reached_date.strftime('%B %d, %Y') }}</div>{% endif %}
+            <div class="small fw-semibold">{{ milestone.status_text }}</div>
+            <div class="progress mt-2" role="progressbar" aria-label="{{ milestone.title }} milestone progress" aria-valuenow="{{ milestone.percent }}" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-bar" style="width: {{ milestone.percent }}%; background-color: var(--brand-accent);"></div>
+            </div>
+            <div class="small text-muted mt-2">{{ milestone.percent }}% · {{ milestone.remaining_hours|hours }} more hour{{ 's' if milestone.remaining_hours != 1 else '' }}</div>
+            <div class="small text-muted mt-2">{{ milestone.unlock_text }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

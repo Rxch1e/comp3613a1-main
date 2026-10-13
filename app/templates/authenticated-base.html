@@ -7,107 +7,194 @@
         background: #f4f6f8;
     }
 
-    #wrapper {
-        display: flex;
+    .student-shell {
         min-height: 100vh;
     }
 
-    #sidebar {
-        min-width: 250px;
-        max-width: 250px;
-        min-height: 100vh;
-        transition: all 0.3s;
+    .student-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        min-height: 76px;
+        padding: 0.75rem clamp(1rem, 3vw, 3rem);
         background: var(--brand-sidebar);
-        color: #fff;
+        border-bottom: 4px solid var(--brand-accent);
     }
 
-    #sidebar.collapsed {
-        margin-left: -250px;
+    .student-header .brand-wordmark {
+        flex: 0 0 auto;
+        color: var(--brand-surface);
+        font-size: 1.35rem;
+        text-decoration: none;
     }
 
-    #sidebar .nav-link {
-        color: var(--brand-sidebar-text);
-        font-weight: 500;
-    }
-
-    #sidebar .nav-link:hover,
-    #sidebar .nav-link.active {
-        color: #fff;
-        background-color: color-mix(in srgb, var(--brand-accent) 55%, #000);
-        border-radius: 0.5rem;
-    }
-
-    #sidebar .brand-wordmark {
-        color: #fff;
-        font-size: 1.25rem;
-        text-align: center;
-        margin: 1rem 0 1.5rem;
-    }
-
-    #content {
-        width: 100%;
-        padding: 1rem;
-        transition: all 0.3s;
+    .student-nav {
         display: flex;
-        flex-direction: column;
-        background-color: #f4f6f8;
+        align-items: stretch;
+        gap: 0.3rem;
+        margin-left: 0.5rem;
     }
 
-    .navbar {
-        border-bottom: 1px solid #dee2e6;
+    .student-nav-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 42px;
+        padding: 0.55rem 0.8rem;
+        border: 1px solid transparent;
+        color: var(--brand-surface);
+        font-size: 0.88rem;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .student-nav-link:hover,
+    .student-nav-link.active {
+        background: var(--brand-accent);
+        border-color: var(--brand-accent);
+        color: var(--brand-ink);
+    }
+
+    .student-nav-link-muted {
+        color: var(--brand-sidebar-text);
+    }
+
+    .student-user {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        margin-left: auto;
+        white-space: nowrap;
+        color: #fff;
+    }
+
+    .student-user .btn-outline-secondary {
+        border-color: #fff;
+        color: #fff;
+    }
+
+    .student-user .btn-outline-secondary:hover,
+    .student-user .btn-outline-secondary:focus {
+        border-color: var(--brand-accent);
+        background: var(--brand-accent);
+        color: var(--brand-ink);
+    }
+
+    .student-badge-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.3rem 0.55rem;
+        border: 1px solid #d4dce5;
+        border-radius: 0.35rem;
+        background: #fff;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        box-shadow: 0 2px 6px rgba(3, 17, 38, 0.2);
+    }
+
+    .student-badge-label .material-symbols-outlined {
+        font-size: 1.05rem;
+    }
+
+    .badge-emblem {
+        display: inline-grid;
+        place-items: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border: 3px solid currentColor;
+        background: color-mix(in srgb, currentColor 12%, #fff);
+    }
+
+    .badge-emblem .material-symbols-outlined {
+        font-size: 1.35rem;
+    }
+
+    .badge-emblem.bronze { color: #a7612c; border-radius: 38% 62% 55% 45%; }
+    .badge-emblem.silver { color: #6e7b87; clip-path: polygon(50% 0, 92% 25%, 82% 78%, 50% 100%, 18% 78%, 8% 25%); }
+    .badge-emblem.gold { color: #b18100; border-radius: 50%; }
+
+    .student-badge-label.bronze { color: #9a5b27; border-color: #c58a5b; }
+    .student-badge-label.silver { color: #66727d; border-color: #9da9b3; }
+    .student-badge-label.gold { color: #a87900; border-color: var(--brand-accent); }
+    .student-badge-label.neutral { color: var(--brand-muted); }
+
+    .student-badge {
+        display: inline-grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid #aebdcd;
+        border-radius: 50%;
+        background: #f4f6f8;
+        color: var(--brand-sidebar);
+        font-size: 0.8rem;
+        font-weight: 800;
+    }
+
+    .student-main {
+        width: 100%;
+        padding: clamp(1.25rem, 3vw, 2.5rem) clamp(1rem, 3vw, 3rem);
+        background-color: #eaf0f6;
+    }
+
+    .wire-card {
+        background: var(--brand-surface);
+        border: 1px solid #b8c3cf;
+        border-top: 3px solid var(--brand-sidebar);
+        box-shadow: none;
+    }
+
+    .wire-card-header {
+        padding: 1.15rem 1.25rem;
+        border-bottom: 1px solid #d8e0e9;
+        background: color-mix(in srgb, var(--brand-sidebar) 8%, #fff);
+    }
+
+    @media (max-width: 900px) {
+        .student-header {
+            flex-wrap: wrap;
+        }
+
+        .student-nav {
+            order: 3;
+            width: 100%;
+            overflow-x: auto;
+            margin-left: 0;
+        }
+
+        .student-user {
+            margin-left: auto;
+        }
     }
 </style>
 {% block additional_styles %}{% endblock %}
 {% endblock %}
 
 {% block content %}
-<div id="wrapper">
-    <nav id="sidebar" class="p-3 d-flex flex-column vh-100">
-        <div class="brand-wordmark">FastStarter</div>
-
-        <ul class="nav nav-pills flex-column gap-2 flex-grow-1">
-            <li class="nav-item">
-                <a class="nav-link d-flex align-items-center {{ 'active' if request.url.path.startswith('/app') }}"
-                   href="{{ url_for('user_home_view') }}">
-                    <span class="material-symbols-outlined me-2">home</span>
-                    Home
-                </a>
-            </li>
-            <li class="nav-item mt-auto">
-                <a class="nav-link d-flex align-items-center text-danger" href="{{ url_for('logout') }}">
-                    <span class="material-symbols-outlined me-2">logout</span>
-                    Logout
-                </a>
-            </li>
-        </ul>
-    </nav>
-
-    <div id="content">
-        <nav class="navbar navbar-expand-lg bg-white mb-4 px-3 rounded-3 shadow-sm">
-            <button class="btn btn-outline-secondary" id="menu-toggle" type="button">
-                <span class="material-symbols-outlined md-dark">menu</span>
-            </button>
-            <div class="ms-auto d-flex align-items-center gap-3">
-                <span class="fw-semibold">Welcome, {{ user.username }}</span>
-            </div>
+<div class="student-shell">
+    <header class="student-header">
+        <a class="brand-wordmark" href="{{ url_for('user_home_view') }}">Apex Awards</a>
+        <nav class="student-nav" aria-label="Student navigation">
+            <a class="student-nav-link {{ 'active' if request.url.path == '/app' }}" href="{{ url_for('user_home_view') }}">Student home</a>
+            <a class="student-nav-link {{ 'active' if request.url.path.startswith('/app/volunteer-hours') }}" href="{{ url_for('volunteer_hours_view') }}">Submit hours</a>
+            <a class="student-nav-link {{ 'active' if request.url.path.startswith('/app/progress') }}" href="{{ url_for('progress_view') }}">Leaderboard &amp; milestones</a>
+            <a class="student-nav-link {{ 'active' if request.url.path.startswith('/app/prizes') }}" href="{{ url_for('prizes_view') }}">Prizes &amp; redemptions</a>
         </nav>
-
-        <div class="row">
-            <div class="col-12">
-                {% for message in get_flashed_messages(request) %}
-                <div class="alert alert-{{ message.type }}" role="alert">{{ message.message }}</div>
-                {% endfor %}
-            </div>
+        <div class="student-user">
+            <span class="student-badge-label {{ badge.color if badge else 'neutral' }}"><span class="badge-emblem {{ badge.color if badge else 'neutral' }}"><span class="material-symbols-outlined" aria-hidden="true">{{ badge.icon if badge else 'star_border' }}</span></span>{{ badge.name if badge else 'Badge' }}</span>
+            <span class="student-badge">{{ user.username[:1]|upper }}</span>
+            <span class="fw-semibold">{{ user.first_name or user.username }}{% if user.last_name %} {{ user.last_name }}{% endif %}</span>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('logout') }}">Sign out</a>
         </div>
+    </header>
 
+    <main class="student-main">
+        {% for message in get_flashed_messages(request) %}
+        <div class="alert alert-{{ message.type }}" role="alert">{{ message.message }}</div>
+        {% endfor %}
         {% block subpage_content %}{% endblock %}
-    </div>
+    </main>
 </div>
-
-<script>
-    document.getElementById("menu-toggle").addEventListener("click", function () {
-        document.getElementById("sidebar").classList.toggle("collapsed");
-    });
-</script>
 {% block subpage_scripts %}{% endblock %}
 {% endblock %}

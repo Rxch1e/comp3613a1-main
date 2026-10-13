@@ -1,9 +1,247 @@
-{% extends "authenticated-base.html" %}
-{% block title %}Admin{% endblock %}
+{% extends "admin-base.html" %}
+{% block title %}Admin Console{% endblock %}
 
-{% block subpage_content %}
-<div class="container-fluid py-2">
-  <h1 class="h4 mb-2">Admin</h1>
-  <p class="text-muted mb-0">Admin workflow screens replace this shell in Phase 5 implement.</p>
+{% block admin_styles %}
+<style>
+  .admin-heading-row {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .admin-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: end;
+  }
+
+  .admin-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .admin-stat {
+    padding: 1rem;
+    border: 1px solid #aeb8c3;
+    background: #fff;
+  }
+
+  .admin-stat strong {
+    display: block;
+    font-size: 1.45rem;
+  }
+
+  .admin-queues {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.95fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .admin-queue {
+    min-width: 0;
+    border: 1px solid #aeb8c3;
+    background: #fff;
+  }
+
+  .admin-queue-header {
+    padding: 1rem 1.15rem;
+    border-bottom: 1px solid #c9d1d9;
+  }
+
+  .admin-table {
+    width: 100%;
+    margin: 0;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #d8e0e9;
+    vertical-align: middle;
+  }
+
+  .admin-table th {
+    background: #e8ebee;
+    color: #4e5964;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  .admin-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .admin-details summary {
+    cursor: pointer;
+    color: var(--brand-sidebar);
+    font-size: 0.8rem;
+    font-weight: 800;
+  }
+
+  .admin-details p {
+    max-width: 240px;
+    margin: 0.45rem 0 0;
+    white-space: normal;
+  }
+
+  .btn-admin-approve {
+    background: #218739;
+    border-color: #218739;
+    color: #fff;
+  }
+
+  .btn-admin-approve:hover,
+  .btn-admin-approve:focus {
+    background: #176b2b;
+    border-color: #176b2b;
+    color: #fff;
+  }
+
+  .btn-admin-reject {
+    background: #c93636;
+    border-color: #c93636;
+    color: #fff;
+  }
+
+  .btn-admin-reject:hover,
+  .btn-admin-reject:focus {
+    background: #9f2525;
+    border-color: #9f2525;
+    color: #fff;
+  }
+
+  @media (max-width: 1100px) {
+    .admin-stat-grid,
+    .admin-queues {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-queues {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 650px) {
+    .admin-heading-row {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .admin-stat-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="admin-heading-row">
+  <div>
+    <h1 class="h2 mb-1">Admin Console</h1>
+    <p class="text-muted mb-0">Review volunteer-hour submissions and manage prize pickups.</p>
+  </div>
+  <div class="admin-actions"><button class="btn btn-outline-secondary" type="button" onclick="window.location.reload()">Refresh</button></div>
 </div>
+
+<div class="admin-stat-grid">
+  <div class="admin-stat"><span class="text-muted small">Pending submissions</span><strong>{{ stats.pending_submissions }} submissions</strong></div>
+  <div class="admin-stat"><span class="text-muted small">Out of stock prizes</span><strong>{{ stats.out_of_stock_prizes }} prize{{ '' if stats.out_of_stock_prizes == 1 else 's' }}</strong></div>
+  <div class="admin-stat"><span class="text-muted small">Pending redemptions</span><strong>{{ stats.pending_redemptions }} redemption{{ '' if stats.pending_redemptions == 1 else 's' }}</strong></div>
+  <div class="admin-stat"><span class="text-muted small">Student volunteers</span><strong>{{ stats.student_volunteers }} volunteers</strong></div>
+</div>
+
+<div class="admin-queues">
+  <section class="admin-queue">
+    <div class="admin-queue-header">
+      <h2 class="h5 mb-1">Pending volunteer-hour submissions ({{ submissions|length }})</h2>
+          <p class="text-muted small mb-0">Rejection requires a clear explanation so the student knows what to correct.</p>
+    </div>
+    {% if submissions %}
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead><tr><th>Student name</th><th>Submitted</th><th>Event</th><th>Additional information</th><th>Hours</th><th>View proof</th><th>Approve</th><th>Reject</th></tr></thead>
+        <tbody>
+        {% for submission in submissions %}
+        <tr>
+          <td class="fw-semibold">{{ submission.student_name }}</td>
+          <td>{{ submission.log.submitted_at.strftime('%b %d, %Y') }}</td>
+          <td>{{ submission.log.event_name }}</td>
+          <td>
+            {% if submission.log.additional_info %}
+            <details class="admin-details">
+              <summary>View information</summary>
+              <p class="small text-muted">{{ submission.log.additional_info }}</p>
+            </details>
+            {% else %}<span class="small text-muted">None provided</span>{% endif %}
+          </td>
+          <td>{{ submission.log.hours|hours }}</td>
+          <td><a class="btn btn-outline-secondary btn-sm" href="{{ url_for('static', path=submission.log.proof) }}" target="_blank" rel="noopener">View proof</a></td>
+          <td><form method="post" action="{{ url_for('approve_volunteer_hours', log_id=submission.log.log_id) }}"><button class="btn btn-admin-approve btn-sm" type="submit">Approve</button></form></td>
+          <td><button class="btn btn-admin-reject btn-sm reject-button" type="button" data-bs-toggle="modal" data-bs-target="#rejectModal" data-reject-url="{{ url_for('reject_volunteer_hours', log_id=submission.log.log_id) }}" data-student-name="{{ submission.student_name }}">Reject</button></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="text-muted p-3 mb-0">No pending volunteer-hour submissions.</p>{% endif %}
+  </section>
+
+  <section class="admin-queue">
+    <div class="admin-queue-header">
+      <h2 class="h5 mb-1">Pending prize redemptions ({{ prize_fulfilments|length }})</h2>
+      <p class="text-muted small mb-0">Mark fulfilled after the student collects their prize.</p>
+    </div>
+    {% if prize_fulfilments %}
+    <div class="table-responsive">
+      <table class="admin-table">
+        <thead><tr><th>Student name</th><th>Prize name</th><th>Delivery type</th><th>Submitted</th><th>Fulfilment</th></tr></thead>
+        <tbody>
+        {% for item in prize_fulfilments %}
+        <tr>
+          <td class="fw-semibold">{{ item.student_name }}</td>
+          <td>{{ item.prize_name }}</td>
+          <td>Manual</td>
+          <td>{{ item.redemption.redeemed_at.strftime('%b %d, %Y') }}</td>
+          <td><form method="post" action="{{ url_for('fulfill_prize_redemption', redemption_id=item.redemption.redemption_id) }}"><button class="btn btn-primary btn-sm" type="submit">Mark fulfilled</button></form></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}<p class="text-muted p-3 mb-0">No pending prize redemptions.</p>{% endif %}
+  </section>
+</div>
+
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header"><h2 class="modal-title h5" id="rejectModalLabel">Reject submission</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+      <form id="rejectForm" method="post">
+        <div class="modal-body">
+          <p class="small text-muted">Explain what needs to be corrected <span id="rejectStudentName"></span> can resubmit their hours.</p>
+          <label class="visually-hidden" for="rejection_reason">Rejection reason</label>
+          <textarea class="form-control" id="rejection_reason" name="rejection_reason" rows="4" placeholder="Example: Upload a clearer proof image showing the event date and hours." required></textarea>
+        </div>
+        <div class="modal-footer"><button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button><button class="btn btn-admin-reject" type="submit">Confirm Reject</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+  document.querySelectorAll(".reject-button").forEach(function (button) {
+    button.addEventListener("click", function () {
+      document.getElementById("rejectForm").action = button.dataset.rejectUrl;
+      document.getElementById("rejectStudentName").textContent = `for ${button.dataset.studentName}`;
+      document.getElementById("rejection_reason").value = "";
+    });
+  });
+</script>
 {% endblock %}
